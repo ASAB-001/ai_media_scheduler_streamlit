@@ -8,7 +8,13 @@ import base64
 import matplotlib.pyplot as plt
 import pandas as pd
 from PyPDF2 import PdfReader
-from streamlit_calendar import calendar
+
+# Check for streamlit_calendar
+try:
+    from streamlit_calendar import calendar
+except ImportError:
+    st.error("The required package 'streamlit-calendar' is not installed. Please install it using the command: `pip install streamlit-calendar`")
+    st.stop()
 
 # ---------- USER LOGIN (Simple Session-based) ----------
 USERS = {"chefking": "password123", "admin": "adminpass"}
