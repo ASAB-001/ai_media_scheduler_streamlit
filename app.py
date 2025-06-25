@@ -1,4 +1,4 @@
-# AI Media Scheduler Web App (Streamlit version)
+# AI Media Scheduler Web App (Streamlit version with Login & Calendar Reminder)
 
 import streamlit as st
 import os
@@ -8,6 +8,29 @@ import base64
 import matplotlib.pyplot as plt
 import pandas as pd
 from PyPDF2 import PdfReader
+from streamlit_calendar import calendar
+
+# ---------- USER LOGIN (Simple Session-based) ----------
+USERS = {"chefking": "password123", "admin": "adminpass"}
+
+def login():
+    st.sidebar.subheader("🔐 Login")
+    username = st.sidebar.text_input("Username")
+    password = st.sidebar.text_input("Password", type="password")
+    if st.sidebar.button("Login"):
+        if USERS.get(username) == password:
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.success(f"Welcome back, {username} 👋")
+        else:
+            st.error("Invalid credentials")
+
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    login()
+    st.stop()
 
 # ---------- INIT ----------
 st.set_page_config(page_title="AI Media Scheduler", layout="wide")
@@ -36,7 +59,7 @@ def play_today_file():
     st.session_state.current_day += 1
     played_today = {}
 
-    for filetype in ['audio', ' 'video', 'pdf']:
+    for filetype in ['audio', 'video', 'pdf']:
         files = st.session_state.media_files[filetype]
         if files:
             index = (st.session_state.current_day - 1) % len(files)
@@ -85,6 +108,26 @@ if st.session_state.play_logs:
 else:
     st.info("No progress yet. Click 'Play Today’s Files' to begin!")
 
+# ---------- CALENDAR VIEW ----------
+st.subheader("🗓️ Reminder Calendar")
+calendar_events = [
+    {
+        'title': log['file'],
+        'start': log['time'],
+        'end': log['time'],
+        'color': '#4A90E2'
+    } for log in st.session_state.play_logs
+]
+
+calendar_options = {
+    "editable": False,
+    "selectable": True,
+    "height": 500,
+    "initialView": "dayGridMonth"
+}
+
+calendar(key="reminder_calendar", events=calendar_events, options=calendar_options)
+
 # ---------- FOOTER ----------
 st.markdown("---")
-st.caption("👨‍🍳 Crafted by Chef Boss for the 3MTT AI Showcase Challenge")
+st.caption(f"👨‍🍳 Crafted by {st.session_state.username} for the 3MTT AI Showcase Challenge")
