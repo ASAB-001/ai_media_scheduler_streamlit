@@ -1,4 +1,4 @@
-streamlit
+streamlit-calendar
 PyPDF2
 matplotlib
 pandas
