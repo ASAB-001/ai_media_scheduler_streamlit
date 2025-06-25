@@ -13,68 +13,13 @@ import random
 # Set seaborn style for attractive visuals
 sns.set(style="whitegrid", palette="pastel")
 
-# --------- ENHANCED THEME & INIT ----------
+# ---------- ENHANCED THEME & INIT ----------
 st.set_page_config(
     page_title="AI Media Scheduler Pro",
     layout="wide",
     page_icon="🎬",
     initial_sidebar_state="expanded"
 )
-
-
-# Custom theme and layout
-st.set_page_config(
-    page_title="AI Media Scheduler Pro",
-    layout="wide",
-    page_icon="🎬",
-    initial_sidebar_state="expanded"
-)
-
-# Custom CSS
-st.markdown("""
-<style>
-body {
-    background-color: #f0f0f0;
-    font-family: Arial, sans-serif;
-}
-.stApp {
-    background: linear-gradient(135deg, #f7f9fc 0%, #e6f7ff 100%);
-    color: #2d3436;
-}
-.stButton>button {
-    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-    color: #ffffff;
-    border: none;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    cursor: pointer;
-}
-.stButton>button:hover {
-    background: linear-gradient(90deg, #2575fc 0%, #6a11cb 100%);
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Set seaborn style
-sns.set(style="whitegrid", palette="pastel")
-
-# Your app code here
-st.title("AI Media Scheduler Pro 🎬")
-st.write("Welcome to the AI Media Scheduler Pro app!")
-
-# Create columns
-col1, col2 = st.columns(2)
-
-# Add content to columns
-col1.write("This is column 1")
-col2.write("This is column 2")
-
-# Add a plot
-fig, ax = plt.subplots()
-sns.set(style="whitegrid")
-ax.plot([1, 2, 3, 4, 5])
-st.pyplot(fig)
-
 
 # Apply custom CSS
 def apply_custom_css():
@@ -446,7 +391,7 @@ if not st.session_state.play_history.empty:
     # Convert to datetime
     sentiment_df = st.session_state.play_history.copy()
     sentiment_df['date'] = pd.to_datetime(sentiment_df['time'])
-
+    
     # Create line chart
     fig, ax = plt.subplots(figsize=(10, 4))
     sns.lineplot(data=sentiment_df, x='date', y='day', hue='sentiment', 
@@ -489,8 +434,6 @@ if not st.session_state.play_history.empty:
                  use_container_width=True)
 else:
     st.info("Play media files to unlock AI analytics")
-
-selected_date = st.sidebar.date_input("Select a schedule date")
 
 # ---------- AI CHAT ASSISTANT ----------
 st.header("💬 Media AI Assistant")
