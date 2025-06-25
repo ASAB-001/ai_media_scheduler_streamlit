@@ -435,6 +435,16 @@ if not st.session_state.play_history.empty:
 else:
     st.info("Play media files to unlock AI analytics")
 
+
+if datetime.date.today() == scheduled_date:
+    st.sidebar.warning("⏰ Reminder: Play scheduled media today!")
+
+selected_date = st.sidebar.date_input("Select a schedule date")
+
+future_days = st.slider("Predict engagement for days ahead", 1, 7)
+st.line_chart([random.uniform(0.7, 1.0) for _ in range(future_days)])
+
+
 # ---------- AI CHAT ASSISTANT ----------
 st.header("💬 Media AI Assistant")
 
