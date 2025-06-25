@@ -446,7 +446,7 @@ if not st.session_state.play_history.empty:
     # Convert to datetime
     sentiment_df = st.session_state.play_history.copy()
     sentiment_df['date'] = pd.to_datetime(sentiment_df['time'])
-    
+
     # Create line chart
     fig, ax = plt.subplots(figsize=(10, 4))
     sns.lineplot(data=sentiment_df, x='date', y='day', hue='sentiment', 
@@ -489,6 +489,8 @@ if not st.session_state.play_history.empty:
                  use_container_width=True)
 else:
     st.info("Play media files to unlock AI analytics")
+
+selected_date = st.sidebar.date_input("Select a schedule date")
 
 # ---------- AI CHAT ASSISTANT ----------
 st.header("💬 Media AI Assistant")
