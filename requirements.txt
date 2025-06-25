@@ -1,4 +1,6 @@
-streamlit-calendar
-PyPDF2
-matplotlib
+seaborn
 pandas
+matplotlib
+streamlit
+PyPDF2
+pillow
