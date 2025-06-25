@@ -13,7 +13,7 @@ import random
 # Set seaborn style for attractive visuals
 sns.set(style="whitegrid", palette="pastel")
 
-# ---------- ENHANCED THEME & INIT ----------
+# --------- ENHANCED THEME & INIT ----------
 st.set_page_config(
     page_title="AI Media Scheduler Pro",
     layout="wide",
