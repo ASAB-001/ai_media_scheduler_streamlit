@@ -2,16 +2,16 @@ import streamlit as st
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
-import plotly.express as px
+import seaborn as sns
 from PyPDF2 import PdfReader
-import av
-import whisper
-from transformers import pipeline
-import textwrap
 import base64
-from faker import Faker
-from streamlit_player import st_player
+from io import BytesIO
 from PIL import Image
+import textwrap
+import random
+
+# Set seaborn style for attractive visuals
+sns.set(style="whitegrid", palette="pastel")
 
 # ---------- ENHANCED THEME & INIT ----------
 st.set_page_config(
@@ -74,23 +74,75 @@ def apply_custom_css():
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
+        
+        .sentiment-positive {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+        
+        .sentiment-neutral {
+            color: #f39c12;
+            font-weight: bold;
+        }
+        
+        .sentiment-negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
     """, unsafe_allow_html=True)
 
 apply_custom_css()
 
-# ---------- AI INITIALIZATION ----------
-@st.cache_resource
-def load_ai_models():
-    """Load all AI models at startup"""
-    return {
-        'whisper': whisper.load_model("small"),
-        'summarizer': pipeline("summarization", model="facebook/bart-large-cnn"),
-        'sentiment': pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english"),
-        'qa': pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
-    }
-
-ai_models = load_ai_models()
+# ---------- AI SIMULATION ----------
+class AIModelSimulator:
+    """Simulates AI functionality for environments without actual models"""
+    
+    @staticmethod
+    def summarize_text(text):
+        """Generate a simulated summary"""
+        if not text:
+            return "AI summary unavailable"
+        
+        sentences = text.split('. ')
+        summary = '. '.join(sentences[:3]) + '.' if len(sentences) > 3 else text
+        return summary
+    
+    @staticmethod
+    def analyze_sentiment(text):
+        """Simulate sentiment analysis"""
+        if not text:
+            return "NEUTRAL", 0.8
+        
+        positive_words = ["good", "great", "excellent", "positive", "happy", "success"]
+        negative_words = ["bad", "poor", "negative", "unhappy", "failure", "problem"]
+        
+        positive_count = sum(word in text.lower() for word in positive_words)
+        negative_count = sum(word in text.lower() for word in negative_words)
+        
+        if positive_count > negative_count:
+            return "POSITIVE", min(0.9, 0.5 + positive_count/10)
+        elif negative_count > positive_count:
+            return "NEGATIVE", min(0.9, 0.5 + negative_count/10)
+        else:
+            return "NEUTRAL", 0.8
+    
+    @staticmethod
+    def answer_question(context, question):
+        """Simulate question answering"""
+        if "what" in question.lower() and "date" in question.lower():
+            return datetime.date.today().strftime("%B %d, %Y")
+        elif "who" in question.lower():
+            return "The author"
+        elif "how" in question.lower() and "many" in question.lower():
+            return "Several"
+        else:
+            answers = ["Based on the content, the answer is affirmative.", 
+                      "The document suggests a negative outcome.",
+                      "This requires further analysis.",
+                      "The text indicates a positive result.",
+                      "No definitive answer is provided."]
+            return random.choice(answers)
 
 # ---------- USER AUTHENTICATION ----------
 USERS = {"chefking": "password123", "admin": "adminpass", "judge": "ai4good"}
@@ -159,26 +211,16 @@ for file in st.session_state.media_files['pdf']:
 # ---------- AI-POWERED PLAYBACK ----------
 st.header("🎬 AI Media Experience")
 
-def transcribe_audio(file_bytes):
-    """Transcribe audio using OpenAI Whisper"""
+def pdf_to_text(file):
+    """Extract text from PDF"""
     try:
-        with st.spinner("🤖 AI is transcribing audio..."):
-            result = ai_models['whisper'].transcribe(file_bytes)
-            return result["text"]
+        reader = PdfReader(file)
+        text = ""
+        for page in reader.pages[:5]:  # First 5 pages
+            text += page.extract_text() or ""
+        return text
     except Exception as e:
-        st.error(f"Transcription failed: {str(e)}")
-        return ""
-
-def generate_ai_insight(text):
-    """Generate AI insight from text"""
-    try:
-        with st.spinner("🧠 Generating AI insights..."):
-            summary = ai_models['summarizer'](text, max_length=150, min_length=30, do_sample=False)
-            sentiment = ai_models['sentiment'](summary[0]['summary_text'])[0]
-            return summary[0]['summary_text'], sentiment
-    except Exception as e:
-        st.error(f"Insight generation failed: {str(e)}")
-        return "AI insight unavailable", {"label": "NEUTRAL", "score": 0}
+        return f"Error reading PDF: {str(e)}"
 
 def play_daily_file():
     if not all_files:
@@ -187,26 +229,27 @@ def play_daily_file():
     # Get current file
     file_type, file = all_files[st.session_state.playing_index]
     
-    # Process with AI
+    # Process with AI simulation
     ai_output = ""
-    sentiment = {"label": "NEUTRAL", "score": 0}
+    sentiment = {"label": "NEUTRAL", "score": 0.8}
     
-    if file_type in ['audio', 'video']:
-        # Save to temp file for processing
-        with open("temp_media", "wb") as f:
-            f.write(file.getbuffer())
-        
-        # Transcribe and analyze
-        transcript = transcribe_audio("temp_media")
-        ai_output, sentiment = generate_ai_insight(transcript)
-        
-        # Add to insights
-        st.session_state.insights.append({
-            'file': file.name,
-            'transcript': transcript,
-            'summary': ai_output,
-            'sentiment': sentiment
-        })
+    if file_type == 'pdf':
+        text = pdf_to_text(file)
+        ai_output = AIModelSimulator.summarize_text(text)
+        sentiment["label"], sentiment["score"] = AIModelSimulator.analyze_sentiment(text)
+    else:
+        # Simulate AI processing for audio/video
+        ai_output = f"AI analysis of {file.name}:\nThis content appears to be engaging and informative. Key themes include technology advancement and user experience optimization."
+        sentiment["label"], sentiment["score"] = random.choice(
+            [("POSITIVE", 0.85), ("NEUTRAL", 0.7), ("POSITIVE", 0.9)]
+        )
+    
+    # Add to insights
+    st.session_state.insights.append({
+        'file': file.name,
+        'summary': ai_output,
+        'sentiment': sentiment
+    })
     
     # Add to logs
     log_entry = {
@@ -219,7 +262,10 @@ def play_daily_file():
     st.session_state.play_logs.append(log_entry)
     
     # Update DataFrame for visualization
-    st.session_state.play_history = st.session_state.play_history.append(log_entry, ignore_index=True)
+    st.session_state.play_history = pd.concat([
+        st.session_state.play_history, 
+        pd.DataFrame([log_entry])
+    ], ignore_index=True)
     
     # Update indices
     st.session_state.playing_index = (st.session_state.playing_index + 1) % len(all_files)
@@ -239,9 +285,13 @@ else:
     # File type distribution
     file_types = [ft[0] for ft in all_files]
     type_counts = pd.Series(file_types).value_counts()
-    fig = px.pie(type_counts, names=type_counts.index, values=type_counts.values, 
-                 title="Media Distribution", hole=0.4)
-    st.plotly_chart(fig, use_container_width=True)
+    
+    # Create pie chart with matplotlib
+    fig, ax = plt.subplots()
+    ax.pie(type_counts, labels=type_counts.index, autopct='%1.1f%%', 
+           colors=sns.color_palette("pastel"), startangle=90)
+    ax.axis('equal')  # Equal aspect ratio ensures the pie is circular
+    st.pyplot(fig)
 
 # Play button with animation
 if st.button("▶️ Generate Today's AI Media Experience", use_container_width=True):
@@ -265,9 +315,18 @@ if st.button("▶️ Generate Today's AI Media Experience", use_container_width=
                         st.info("PDF scheduled for today - see summary below")
                     
                     # Sentiment indicator
-                    sentiment_emoji = "😊" if sentiment['label'] == "POSITIVE" else "😐" if sentiment['label'] == "NEUTRAL" else "😞"
-                    st.metric("Sentiment Analysis", f"{sentiment['label']} {sentiment_emoji}", 
-                              f"{sentiment['score']*100:.1f}% confidence")
+                    sentiment_class = ""
+                    if sentiment['label'] == "POSITIVE":
+                        sentiment_class = "sentiment-positive"
+                    elif sentiment['label'] == "NEUTRAL":
+                        sentiment_class = "sentiment-neutral"
+                    else:
+                        sentiment_class = "sentiment-negative"
+                        
+                    st.markdown(f"**Sentiment Analysis**  \n"
+                                f"<span class='{sentiment_class}'>{sentiment['label']}</span> "
+                                f"({sentiment['score']*100:.1f}% confidence)", 
+                                unsafe_allow_html=True)
                 
                 with col2:
                     # AI output in styled card
@@ -286,29 +345,10 @@ if st.button("▶️ Generate Today's AI Media Experience", use_container_width=
 # ---------- ENHANCED PDF AI PROCESSING ----------
 st.header("📚 AI-Powered Document Intelligence")
 
-def pdf_to_text(file):
-    """Extract text from PDF with formatting"""
-    try:
-        reader = PdfReader(file)
-        text = ""
-        for page in reader.pages[:5]:  # First 5 pages
-            text += page.extract_text() or ""
-        return text
-    except Exception as e:
-        st.error(f"PDF processing error: {str(e)}")
-        return ""
-
 def ai_pdf_qa(file, question):
-    """Answer questions about PDF using AI"""
+    """Answer questions about PDF using AI simulation"""
     text = pdf_to_text(file)
-    if not text:
-        return "Could not process PDF"
-    
-    try:
-        result = ai_models['qa'](question=question, context=text)
-        return result['answer']
-    except Exception as e:
-        return f"Error: {str(e)}"
+    return AIModelSimulator.answer_question(text, question)
 
 if st.session_state.media_files['pdf']:
     # PDF selector
@@ -322,9 +362,9 @@ if st.session_state.media_files['pdf']:
         with st.expander("📝 AI Summary"):
             text = pdf_to_text(pdf_file)
             if text:
-                summary = ai_models['summarizer'](text, max_length=300, min_length=100)[0]['summary_text']
+                summary = AIModelSimulator.summarize_text(text)
                 st.markdown(f"**AI Summary of {selected_pdf}**")
-                st.write(summary)
+                st.markdown(f"<div class='card'>{summary}</div>", unsafe_allow_html=True)
         
         # Interactive Q&A
         st.subheader("❓ Ask Questions About This Document")
@@ -347,33 +387,46 @@ st.header("📊 AI-Powered Media Analytics")
 if not st.session_state.play_history.empty:
     # Sentiment over time
     st.subheader("Sentiment Journey")
+    
+    # Convert to datetime
     sentiment_df = st.session_state.play_history.copy()
     sentiment_df['date'] = pd.to_datetime(sentiment_df['time'])
     
-    fig = px.line(sentiment_df, x='date', y='day', color='sentiment',
-                  title="Media Sentiment Over Time", markers=True,
-                  color_discrete_map={
-                      "POSITIVE": "green",
-                      "NEUTRAL": "blue",
-                      "NEGATIVE": "red"
-                  })
-    st.plotly_chart(fig, use_container_width=True)
+    # Create line chart
+    fig, ax = plt.subplots(figsize=(10, 4))
+    sns.lineplot(data=sentiment_df, x='date', y='day', hue='sentiment', 
+                 palette={"POSITIVE": "green", "NEUTRAL": "blue", "NEGATIVE": "red"},
+                 marker="o", ax=ax)
+    ax.set_title("Media Sentiment Over Time")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Day")
+    st.pyplot(fig)
     
     # Media type analytics
     st.subheader("Media Consumption Patterns")
     col1, col2 = st.columns(2)
     
     with col1:
-        media_count = sentiment_df['type'].value_counts().reset_index()
-        media_count.columns = ['Type', 'Count']
-        fig = px.bar(media_count, x='Type', y='Count', color='Type',
-                     title="Media Type Distribution", text_auto=True)
-        st.plotly_chart(fig, use_container_width=True)
+        # Bar chart
+        st.markdown("**Media Type Distribution**")
+        type_counts = sentiment_df['type'].value_counts()
+        fig, ax = plt.subplots(figsize=(8, 4))
+        sns.barplot(x=type_counts.index, y=type_counts.values, 
+                    palette="pastel", ax=ax)
+        ax.set_xlabel("Media Type")
+        ax.set_ylabel("Count")
+        st.pyplot(fig)
     
     with col2:
-        fig = px.pie(sentiment_df, names='sentiment', 
-                     title="Overall Sentiment Distribution", hole=0.3)
-        st.plotly_chart(fig, use_container_width=True)
+        # Pie chart
+        st.markdown("**Sentiment Distribution**")
+        sentiment_counts = sentiment_df['sentiment'].value_counts()
+        fig, ax = plt.subplots()
+        ax.pie(sentiment_counts, labels=sentiment_counts.index, 
+               autopct='%1.1f%%', colors=["#2ecc71", "#f39c12", "#e74c3c"],
+               startangle=90)
+        ax.axis('equal')
+        st.pyplot(fig)
     
     # Full history
     st.subheader("Complete Play History")
@@ -387,17 +440,15 @@ st.header("💬 Media AI Assistant")
 
 def chat_with_ai(query):
     """Generate response using media context"""
-    context = f"""
-    You are a media scheduling assistant. The user has scheduled {len(all_files)} media files. 
-    Recent files: {[f[1].name for f in all_files[:3]] if all_files else 'None'}
-    Today is day {st.session_state.current_day + 1} of the schedule.
-    """
-    
-    try:
-        response = f"AI Response to: {query} (This is a simulation. In a full implementation, this would connect to an LLM API)"
-        return response
-    except:
-        return "I couldn't process your request. Please try again."
+    # Simulate AI response
+    responses = [
+        f"Your media schedule currently has {len(all_files)} files scheduled. Next up: {all_files[st.session_state.playing_index][1].name if all_files else 'No files'}.",
+        "Based on your viewing patterns, I recommend adding more video content for engagement.",
+        "The sentiment analysis shows your audience responds well to positive content.",
+        "You've scheduled content for the next {} days.".format(len(all_files) - st.session_state.playing_index),
+        "Recent files have focused on technology and innovation themes."
+    ]
+    return random.choice(responses)
 
 # Chat interface
 for message in st.session_state.chat_history:
@@ -424,7 +475,7 @@ st.sidebar.subheader("🏆 Achievements")
 badges = {
     "First Play": st.session_state.current_day > 0,
     "Media Master": len(all_files) >= 5,
-    "AI Explorer": any(st.session_state.insights),
+    "AI Explorer": len(st.session_state.insights) > 0,
     "Daily Champion": st.session_state.current_day >= 7
 }
 
@@ -437,9 +488,8 @@ for badge, earned in badges.items():
 # Personalization options
 st.sidebar.subheader("🎨 Customize Your Experience")
 theme_color = st.sidebar.color_picker("Theme Color", "#6a11cb")
-playback_speed = st.sidebar.slider("Playback Speed", 0.5, 2.0, 1.0, 0.25)
 
 # ---------- FOOTER WITH AI TOUCH ----------
 st.markdown("---")
 st.caption(f"✨ AI-Powered Media Experience | Day {st.session_state.current_day + 1}")
-st.caption(f"🧠 Powered by Whisper, BART, and Transformers | 👨‍🍳 Crafted by {st.session_state.username} for the 3MTT AI Showcase Challenge")
+st.caption(f"🧠 Simulated AI Intelligence | 👨‍🍳 Crafted by {st.session_state.username} for the 3MTT AI Showcase Challenge")
