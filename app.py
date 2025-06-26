@@ -215,7 +215,7 @@ class DataScienceModels:
 
 # ---------- USER AUTHENTICATION ----------
 USERS = {
-    "chefking": {"password": "password123", "role": "admin"},
+    "testuser": {"password": "password123", "role": "admin"},
     "datascientist": {"password": "ds1234", "role": "data_scientist"},
     "analyst": {"password": "analyst456", "role": "analyst"}
 }
@@ -680,4 +680,4 @@ st.sidebar.caption(f"👨‍💻 User: {st.session_state.username}")
 
 # Main app footer
 st.markdown("---")
-st.caption("© 2023 DataScribe - AI-Powered Media Analytics | Created for 3MTT AI Showcase Challenge")
+st.caption("© 2025 DataScribe - AI-Media Scheduler App | Created for 3MTT Knowledge Showcase Challenge")
