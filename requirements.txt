@@ -4,3 +4,4 @@ matplotlib
 streamlit
 PyPDF2
 pillow
+wordcloud
